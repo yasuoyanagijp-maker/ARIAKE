@@ -17,3 +17,16 @@ def save_results_table(rows, outpath):
         return outpath
     df.to_csv(outpath, index=False)
     return outpath
+def scan_images(folder, pattern="*.tif"):
+    p = Path(folder)
+    # if a single file path is provided, return it if it matches the pattern
+    if p.exists() and p.is_file():
+        if fnmatch.fnmatch(p.name, pattern):
+            return [str(p)]
+        return []
+    # if the path doesn't exist or is not a dir, return empty list
+    if not p.exists() or not p.is_dir():
+        return []
+    files = [str(f) for f in p.rglob(pattern)]
+    files.sort()
+    return files
