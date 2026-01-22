@@ -61,7 +61,7 @@ def detect_faz_region(
     avascular_closed = morphology.closing(avascular, selem)
     
     # Remove small objects
-    # Note: scikit-image 0.26+ deprecates min_size but we keep it for compatibility
+    # Note: Suppress FutureWarning for scikit-image 0.26+ compatibility
     import warnings
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=FutureWarning)
@@ -74,13 +74,14 @@ def detect_faz_region(
     regions = measure.regionprops(labeled)
     
     if len(regions) == 0:
-        # No FAZ detected, return empty mask
+        # No FAZ detected, return empty mask with center coordinates
+        # Note: Using (x, y) convention for consistency
         return np.zeros_like(vessel_mask, dtype=bool), {
             "faz_area_px": 0.0,
             "faz_perimeter_px": 0.0,
             "faz_circularity": 0.0,
-            "faz_centroid_x": w / 2,
-            "faz_centroid_y": h / 2,
+            "faz_centroid_x": w / 2,  # x = column
+            "faz_centroid_y": h / 2,  # y = row
         }
     
     # Find the region closest to image center within size constraints
@@ -118,14 +119,15 @@ def detect_faz_region(
     else:
         circularity = 0.0
     
+    # Get centroid - region.centroid returns (row, col) = (y, x)
     cy, cx = best_region.centroid
     
     metrics = {
         "faz_area_px": float(area),
         "faz_perimeter_px": float(perimeter),
         "faz_circularity": float(circularity),
-        "faz_centroid_x": float(cx),
-        "faz_centroid_y": float(cy),
+        "faz_centroid_x": float(cx),  # x = column
+        "faz_centroid_y": float(cy),  # y = row
     }
     
     return faz_mask, metrics
