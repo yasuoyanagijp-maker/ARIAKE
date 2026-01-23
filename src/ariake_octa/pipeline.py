@@ -13,6 +13,7 @@ from .classify import classify_mnv
 from .roi import refine_roi_by_intensity, polygon_to_mask_coords
 from .arteriolarization import analyze_arteriolarization
 from .utils import mm_per_pixel_from_scale
+from .faz_segmentation import segment_faz
 
 def default_roi_center_circle(shape):
     h,w = shape
@@ -79,6 +80,21 @@ def process_file(path, output_dir, params):
     arteriol = analyze_arteriolarization(distance_map, skeleton_mask=(bin_mask>0).astype("uint8"),
                                          roi_mask=roi_mask, mm_per_pixel=mm_per_pixel)
     out.update(arteriol)
+    # Create output directory
+    p = Path(output_dir)
+    p.mkdir(parents=True, exist_ok=True)
+    # FAZ segmentation
+    if params.get("enable_faz", True):
+        faz_mask, faz_metrics = segment_faz(
+            pre, 
+            (bin_mask>0).astype(bool),
+            mm_per_pixel=mm_per_pixel,
+            refine=params.get("faz_refine", False),
+            min_area_px=params.get("faz_min_area_px", 100)
+        )
+        out.update(faz_metrics)
+        # Save FAZ mask
+        tiff.imwrite(str(p / (Path(path).stem + "_faz_mask.tif")), faz_mask.astype("uint8")*255)
     # classification
     metrics_for_class = {
         "center_branch": out.get("n_branches",0),
@@ -98,8 +114,6 @@ def process_file(path, output_dir, params):
     }
     classification = classify_mnv(metrics_for_class)
     out.update(classification)
-    p = Path(output_dir)
-    p.mkdir(parents=True, exist_ok=True)
     tiff.imwrite(str(p / (Path(path).stem + "_preprocessed.tif")), pre.astype("uint8"))
     tiff.imwrite(str(p / (Path(path).stem + "_fused.tif")), fused.astype("uint8"))
     tiff.imwrite(str(p / (Path(path).stem + "_binary.tif")), (bin_mask>0).astype("uint8")*255)

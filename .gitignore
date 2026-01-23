@@ -4,3 +4,14 @@
 /ARIAKE Stack Registration ユーザーマニュアル.rtf
 /ARIAKE_OCTA_color_code_Jマクロユーザーマニュアル.rtf
 /ARIAKE_OCTA_integrated_method_for_paper.rtf
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+*.egg-info/
+dist/
+build/
